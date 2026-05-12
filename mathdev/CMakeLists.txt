@@ -60,15 +60,21 @@ set(KERNEL_DIR "/lib/modules/${CMAKE_SYSTEM_VERSION}/build"
 
 if(EXISTS "${KERNEL_DIR}")
     add_custom_target(kernel_module ALL
-        COMMAND $(MAKE) -C "${KERNEL_DIR}" M="${CMAKE_CURRENT_SOURCE_DIR}/kernel" modules
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/kernel"
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+                -C ${KERNEL_DIR}
+                M=${CMAKE_CURRENT_SOURCE_DIR}/kernel
+                modules
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/kernel
         COMMENT "Building mathdev.ko kernel module"
         VERBATIM
     )
 
     add_custom_target(kernel_clean
-        COMMAND $(MAKE) -C "${KERNEL_DIR}" M="${CMAKE_CURRENT_SOURCE_DIR}/kernel" clean
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/kernel"
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+                -C ${KERNEL_DIR}
+                M=${CMAKE_CURRENT_SOURCE_DIR}/kernel
+                clean
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/kernel
         COMMENT "Cleaning kernel module build artefacts"
         VERBATIM
     )
