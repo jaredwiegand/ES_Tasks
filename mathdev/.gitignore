@@ -1,0 +1,39 @@
+# Kernel module build artefacts
+kernel/*.o
+kernel/*.ko
+kernel/*.mod
+kernel/*.mod.c
+kernel/*.mod.o
+kernel/.*.cmd
+kernel/modules.order
+kernel/Module.symvers
+kernel/.tmp_versions/
+
+# CMake
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+_deps/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+*.egg
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Runtime
+/tmp/mathdev.sock
