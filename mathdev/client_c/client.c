@@ -335,12 +335,14 @@ static status_t send_msg(int32_t fd, const char *json_str)
 {
     uint8_t  header[HEADER_SIZE];
     uint32_t len;
-    ssize_t  written;
+    uint32_t sent;
+    ssize_t  n;
     status_t result = STATUS_ERR;
 
     if (json_str != NULL)
     {
-        len = (uint32_t)strlen(json_str);
+        len    = (uint32_t)strlen(json_str);
+        result = STATUS_OK;
 
         /* Encode payload length as 4-byte big-endian (network byte order). */
         header[0] = (uint8_t)((len >> 24U) & 0xFFU);
@@ -348,13 +350,33 @@ static status_t send_msg(int32_t fd, const char *json_str)
         header[2] = (uint8_t)((len >>  8U) & 0xFFU);
         header[3] = (uint8_t)( len         & 0xFFU);
 
-        written = write(fd, header, HEADER_SIZE);
-        if (written == (ssize_t)HEADER_SIZE)
+        /* Write header, looping to handle partial writes. */
+        sent = 0U;
+        while ((sent < HEADER_SIZE) && (result == STATUS_OK))
         {
-            written = write(fd, json_str, (size_t)len);
-            if (written == (ssize_t)len)
+            n = write(fd, &header[sent], (size_t)(HEADER_SIZE - sent));
+            if (n <= (ssize_t)0)
             {
-                result = STATUS_OK;
+                result = STATUS_ERR;
+            }
+            else
+            {
+                sent += (uint32_t)n;
+            }
+        }
+
+        /* Write payload, looping to handle partial writes. */
+        sent = 0U;
+        while ((result == STATUS_OK) && (sent < len))
+        {
+            n = write(fd, &json_str[sent], (size_t)(len - sent));
+            if (n <= (ssize_t)0)
+            {
+                result = STATUS_ERR;
+            }
+            else
+            {
+                sent += (uint32_t)n;
             }
         }
     }

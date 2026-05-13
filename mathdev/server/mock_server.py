@@ -94,8 +94,6 @@ def main():
     log.setLevel(args.log_level)
 
     server = MathServer(args.socket, "/dev/null")  # device_path unused
-    # Monkey-patch to use mock kernel
-    original_run = server.run
 
     def patched_run():
         # Clean up stale socket

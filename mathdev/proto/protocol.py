@@ -2,8 +2,16 @@
 protocol.py  –  mathdev IPC protocol (shared by server and clients)
 ===================================================================
 
-All messages are newline-delimited JSON (NDJSON) sent over a Unix-domain
-stream socket.  Every message has at minimum a "type" field.
+All messages are length-prefixed JSON sent over a Unix-domain stream socket.
+
+Wire framing
+------------
+Every message is preceded by a 4-byte big-endian uint32 that gives the byte
+length of the JSON payload that follows:
+
+    [ 4 bytes big-endian uint32 length ][ UTF-8 JSON payload ]
+
+Every message has at minimum a "type" field.
 
 Message types (client → server)
 --------------------------------
@@ -33,7 +41,7 @@ Operator identifiers  (must match kernel MATH_OP_* constants)
   MUL  = 3
   DIV  = 4
 
-Wire examples
+Wire examples (JSON payload only; each is preceded by its 4-byte length header)
 -------------
 Client → Server:
   {"type": "HELLO", "version": "1.0", "client_id": "python-cli-1"}
@@ -76,7 +84,6 @@ from typing import Any
 PROTOCOL_VERSION = "1.0"
 SERVER_ID        = "mathdev-server"
 DEFAULT_SOCKET   = "/tmp/mathdev.sock"
-BUFFER_SIZE      = 4096
 
 # ── Operator codes (mirror kernel MATH_OP_*) ─────────────────────────────────
 class OpCode(IntEnum):

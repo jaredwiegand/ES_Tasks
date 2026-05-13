@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # scripts/run_tests.sh
 # --------------------
-# Run the full mathdev test suite.
+# Run the mathdev test suite.
 # Usage:
 #   bash scripts/run_tests.sh           # all tests (unit + integration)
 #   bash scripts/run_tests.sh --unit    # unit tests only (no kernel needed)
-#   bash scripts/run_tests.sh --kernel  # include real kernel tests
 
 set -euo pipefail
 
@@ -28,13 +27,24 @@ if ! python3 -c "import pytest" 2>/dev/null; then
     pip3 install pytest --break-system-packages --quiet
 fi
 
+# ── --unit mode: run only unit tests and exit ────────────────────────────────
+if [[ "${MODE}" == "--unit" ]]; then
+    echo -e "\n${BOLD}[1/1] Python unit tests${RESET}"
+    python3 -m pytest tests/unit/ -v --tb=short
+    RESULT=$?
+    echo ""
+    [[ $RESULT -eq 0 ]] && echo -e "${GREEN}Unit tests passed!${RESET}" \
+                        || echo -e "${RED}Unit tests failed.${RESET}"
+    exit $RESULT
+fi
+
 # ── Python unit tests ─────────────────────────────────────────────────────────
-echo -e "\n${BOLD}[1/3] Python unit tests${RESET}"
+echo -e "\n${BOLD}[1/4] Python unit tests${RESET}"
 python3 -m pytest tests/unit/ -v --tb=short
 UNIT_RESULT=$?
 
 # ── Python integration tests (mock stack, no kernel needed) ──────────────────
-echo -e "\n${BOLD}[2/3] Integration tests (mock stack)${RESET}"
+echo -e "\n${BOLD}[2/4] Integration tests (mock stack)${RESET}"
 python3 -m pytest tests/integration/test_mock_stack.py -v --tb=short
 MOCK_RESULT=$?
 

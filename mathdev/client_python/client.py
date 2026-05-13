@@ -23,12 +23,8 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "proto"))
 import protocol as proto
 
-# ── Terminal colours (graceful fallback on plain terminals) ───────────────────
-try:
-    import shutil
-    _COLOURS = shutil.get_terminal_size().columns > 0
-except Exception:
-    _COLOURS = False
+# ── Terminal colours (disabled when stdout is not a tty, e.g. piped) ─────────
+_COLOURS = sys.stdout.isatty()
 
 def _col(code: str, text: str) -> str:
     if not _COLOURS:
@@ -62,9 +58,7 @@ class MathClient:
         if self._sock:
             try:
                 proto.send_msg(self._sock, proto.build_bye(self.client_id))
-                ack = proto.recv_msg(self._sock)
-                if ack and ack.get("type") == proto.MSG_BYE_ACK:
-                    pass  # clean disconnect confirmed
+                proto.recv_msg(self._sock)  # drain BYE_ACK
             except Exception:
                 pass
             self._sock.close()
@@ -106,8 +100,7 @@ class MathClient:
         print(f"  Connected as {YELLOW(self.client_id)}")
         print()
 
-    def _print_menu(self) -> None:
-        # Build menu from ops announced by server
+    def _print_menu(self) -> tuple[list[tuple[int, str, str]], int]:
         op_menu: list[tuple[int, str, str]] = []
         for i, op in enumerate(self._ops, start=1):
             name = op["name"]
@@ -121,13 +114,21 @@ class MathClient:
         print()
         return op_menu, exit_num
 
+    _INT64_MIN = -(2 ** 63)
+    _INT64_MAX =  (2 ** 63) - 1
+
     def _get_int(self, prompt: str) -> int:
         while True:
             raw = input(prompt).strip()
             try:
-                return int(raw)
+                value = int(raw)
             except ValueError:
                 print(RED(f"  ✗ '{raw}' is not a valid integer. Try again."))
+                continue
+            if not (self._INT64_MIN <= value <= self._INT64_MAX):
+                print(RED(f"  ✗ Value must be between {self._INT64_MIN} and {self._INT64_MAX}."))
+                continue
+            return value
 
     # -- main loop -----------------------------------------------------------
 

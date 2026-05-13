@@ -22,7 +22,6 @@
 #  include <sys/ioctl.h>
    typedef int64_t  s64;
    typedef uint32_t u32;
-   typedef uint8_t  u8;
 #endif
 
 /* ------------------------------------------------------------------ */
