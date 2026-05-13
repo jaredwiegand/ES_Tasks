@@ -74,15 +74,21 @@ if(BUILD_TESTS)
     )
     FetchContent_MakeAvailable(unity)
 
-    add_executable(freertos_tests
-        tests/test_device_a_sm.c
-        tests/test_device_b_sm.c
-        tests/test_ipc_types.c
-    )
-    # statemachine's PUBLIC BUILD_TESTS propagates to freertos_tests, so all
-    # headers included by test files also see BUILD_TESTS automatically.
-    target_link_libraries(freertos_tests PRIVATE statemachine unity)
+    # Each test file has its own main(), setUp(), and tearDown(), so each
+    # is built as an independent executable.
+    foreach(test_src
+            tests/test_device_a_sm.c
+            tests/test_device_b_sm.c
+            tests/test_ipc_types.c)
+        get_filename_component(test_name ${test_src} NAME_WE)
+        add_executable(${test_name} ${test_src})
+        # statemachine's PUBLIC BUILD_TESTS propagates to the test target so
+        # all included headers also see BUILD_TESTS automatically.
+        target_link_libraries(${test_name} PRIVATE statemachine unity)
+    endforeach()
 
     enable_testing()
-    add_test(NAME unit_tests COMMAND freertos_tests)
+    add_test(NAME test_device_a_sm  COMMAND test_device_a_sm)
+    add_test(NAME test_device_b_sm  COMMAND test_device_b_sm)
+    add_test(NAME test_ipc_types    COMMAND test_ipc_types)
 endif()

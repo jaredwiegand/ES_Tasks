@@ -26,6 +26,8 @@ freertos_master_slave/
 ├── README.md             This file
 ├── REQUIREMENTS.docx     Requirements specification
 ├── DESIGN.docx           Software design document
+├── scripts/
+│   └── run_tests.sh      Build and run the full test suite
 ├── src/
 │   ├── main.c            Entry point: queues, tasks, scheduler
 │   ├── device_a.c/.h     Master state machine and FreeRTOS task
@@ -74,18 +76,34 @@ build\freertos_sim.exe
 FreeRTOS-Kernel v11.1.0 and (when `BUILD_TESTS=ON`) Unity v2.5.2 are fetched
 automatically by CMake on first configure; an internet connection is required.
 
-## Running Unit Tests
+## Running Tests
+
+### Using the test script (recommended)
+
+```bash
+bash scripts/run_tests.sh          # build + unit tests + sim smoke test
+bash scripts/run_tests.sh --unit   # unit tests only
+```
+
+The script builds with `BUILD_TESTS=ON`, runs each Unity suite with per-test
+PASS/FAIL output, and (in full mode) runs a 5-second simulation smoke test.
+
+### Manually
 
 ```bash
 cmake -B build -DBUILD_TESTS=ON
 cmake --build build
-./build/freertos_tests
-```
 
-Or via CTest:
+# Run all suites (summary output)
+cd build && ctest
 
-```bash
-cd build && ctest --output-on-failure
+# Run all suites with per-test PASS/FAIL lines
+cd build && ctest -V
+
+# Run a single suite
+./build/test_device_a_sm
+./build/test_device_b_sm
+./build/test_ipc_types
 ```
 
 ## Configuration
@@ -114,18 +132,20 @@ freertos_master_slave simulation
 Duration : 30000 ms
 Threshold: 3 consecutive FAULT observations
 
-[TICK:0000000000] [DEVICE_B] task started  state=SLEEP
+[TICK:0000000001] [DEVICE_B] task started  state=SLEEP
 [TICK:0000000001] [DEVICE_A] task started  state=IDLE
-[TICK:0000000500] [DEVICE_B] SLEEP -> ACTIVE
-[TICK:0000000751] [DEVICE_A] IDLE -> PROCESSING
-[TICK:0000001000] [DEVICE_B] ACTIVE -> FAULT
-[TICK:0000001001] [DEVICE_A] fault_count=1
-[TICK:0000001251] [DEVICE_A] fault_count=2
-[TICK:0000001501] [DEVICE_A] fault_count=3
-[TICK:0000001501] [DEVICE_A] PROCESSING -> ERROR
-[TICK:0000001501] [DEVICE_A] reset command issued
-[TICK:0000001500] [DEVICE_B] FAULT -> SLEEP  (reset received)
-[TICK:0000001752] [DEVICE_A] ERROR -> IDLE  (recovery complete)
+[TICK:0000000501] [DEVICE_B] SLEEP -> ACTIVE
+[TICK:0000000501] [DEVICE_A] IDLE -> PROCESSING
+[TICK:0000003501] [DEVICE_B] ACTIVE -> SLEEP
+[TICK:0000003501] [DEVICE_A] PROCESSING -> IDLE
+[TICK:0000007001] [DEVICE_B] ACTIVE -> FAULT
+[TICK:0000007001] [DEVICE_A] fault_count=1
+[TICK:0000007251] [DEVICE_A] fault_count=2
+[TICK:0000007501] [DEVICE_A] fault_count=3
+[TICK:0000007501] [DEVICE_A] reset command issued
+[TICK:0000007501] [DEVICE_A] PROCESSING -> ERROR
+[TICK:0000008001] [DEVICE_B] FAULT -> SLEEP  (reset received)
+[TICK:0000008001] [DEVICE_A] ERROR -> IDLE  (recovery complete)
 
 Simulation complete.
 ```
