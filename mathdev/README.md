@@ -30,7 +30,7 @@ kernel character device, an IPC server gateway, and multiple clients.
 ## Requirements
 
 ### Kernel module
-- Linux kernel **≥ 5.x** (tested on 5.15, 6.1, 6.6)
+- Linux kernel **≥ 5.x**
 - Kernel headers for your running kernel: `linux-headers-$(uname -r)`
 - `gcc`, `make`
 
@@ -229,10 +229,21 @@ mathdev/
 ├── client_c/
 │   ├── client.c            ← C11 interactive client (bonus)
 │   └── protocol.h          ← C protocol constants
-└── scripts/
-    ├── load_module.sh      ← Build + insmod + set permissions
-    ├── unload_module.sh    ← rmmod
-    └── start_server.sh     ← Start production server
+├── scripts/
+│   ├── load_module.sh      ← Build + insmod + set permissions
+│   ├── unload_module.sh    ← rmmod
+│   ├── start_server.sh     ← Start production server
+│   └── run_tests.sh        ← Run all test tiers
+└── tests/
+    ├── conftest.py         ← Shared pytest fixtures
+    ├── unit/
+    │   ├── test_protocol.py    ← Tests for proto/protocol.py
+    │   └── test_server.py      ← Tests for server/server.py (mock kernel)
+    ├── integration/
+    │   ├── test_mock_stack.py  ← Full stack with mock server (no kernel needed)
+    │   └── test_integration.py ← Full stack with real kernel (requires /dev/mathdev)
+    └── c/
+        └── test_client_proto.c ← C client protocol tests
 ```
 
 ---
@@ -257,6 +268,60 @@ compile-time `LINUX_VERSION_CODE` guard.
 3. Add to the `math_ops_info` table in `mathdev_ioctl()`
 4. Add to `proto/protocol.py` `AVAILABLE_OPS` and `OpCode` enum
 5. No client changes needed — the menu is built from the server announcement
+
+---
+
+## Running Tests
+
+The test suite uses **pytest** and is split into three tiers. All commands run from the `mathdev/` directory.
+
+### Prerequisites
+
+```bash
+pip3 install pytest
+```
+
+### Unit tests (no kernel or server required)
+
+Covers `proto/protocol.py` and `server/server.py` using a mock kernel interface.
+
+```bash
+python3 -m pytest tests/unit/ -v
+```
+
+### Integration tests — mock stack (no kernel required)
+
+Spins up the server with `MockKernelInterface` and exercises the full client↔server protocol path.
+
+```bash
+python3 -m pytest tests/integration/test_mock_stack.py -v
+```
+
+### Integration tests — real kernel (requires `/dev/mathdev`)
+
+Load the module first (`sudo bash scripts/load_module.sh`), then:
+
+```bash
+python3 -m pytest tests/integration/test_integration.py -v
+```
+
+### Run everything at once
+
+`scripts/run_tests.sh` runs all tiers and prints a pass/fail summary. Kernel and C tests are skipped automatically when their prerequisites are absent.
+
+```bash
+bash scripts/run_tests.sh
+```
+
+### Pytest markers
+
+Filter by tier using `-m`:
+
+```bash
+python3 -m pytest -m unit -v          # unit tests only
+python3 -m pytest -m integration -v   # integration tests only
+python3 -m pytest -m kernel -v        # real kernel tests only
+```
 
 ---
 
