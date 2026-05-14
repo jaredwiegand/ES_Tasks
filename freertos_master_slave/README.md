@@ -124,32 +124,27 @@ cmake -B build -DCMAKE_C_FLAGS="-DSIM_DURATION_MS=60000 -DFAULT_THRESHOLD=5"
 | `RESET_TIMEOUT_MS` | 2000 | Device A recovery wait before re-issuing reset |
 | `RAND_SEED` | 42 | Fixed seed for reproducible Device B transitions |
 
-## Sample Output
+## Simulation Results
 
-```
-freertos_master_slave simulation
-=================================
-Duration : 30000 ms
-Threshold: 3 consecutive FAULT observations
+See [SIMULATION_RESULTS.md](SIMULATION_RESULTS.md) for a fully annotated
+30-second run demonstrating state synchronisation, fault detection, transient
+fault debouncing, and recovery across four independent fault cycles.
 
-[TICK:0000000001] [DEVICE_B] task started  state=SLEEP
-[TICK:0000000001] [DEVICE_A] task started  state=IDLE
-[TICK:0000000501] [DEVICE_B] SLEEP -> ACTIVE
-[TICK:0000000501] [DEVICE_A] IDLE -> PROCESSING
-[TICK:0000003501] [DEVICE_B] ACTIVE -> SLEEP
-[TICK:0000003501] [DEVICE_A] PROCESSING -> IDLE
-[TICK:0000007001] [DEVICE_B] ACTIVE -> FAULT
-[TICK:0000007001] [DEVICE_A] fault_count=1
-[TICK:0000007251] [DEVICE_A] fault_count=2
-[TICK:0000007501] [DEVICE_A] fault_count=3
-[TICK:0000007501] [DEVICE_A] reset command issued
-[TICK:0000007501] [DEVICE_A] PROCESSING -> ERROR
-[TICK:0000008001] [DEVICE_B] FAULT -> SLEEP  (reset received)
-[TICK:0000008001] [DEVICE_A] ERROR -> IDLE  (recovery complete)
+## Key Design Decisions
 
-Simulation complete.
-```
+| Decision | Rationale |
+|----------|-----------|
+| Queues-only IPC | No shared memory means no mutex contention or priority inversion risk; producer and consumer are fully decoupled in time |
+| Pure SM functions separated from task code | `device_a_process_event()` and `device_b_next_state()` have zero FreeRTOS dependency and compile under `BUILD_TESTS=ON` for direct unit testing |
+| Dedicated logger task | All `printf` output serialised through one thread; device tasks pay only a non-blocking queue-send cost and are never stalled by I/O |
+| Fixed `RAND_SEED` | Every run is deterministic and reproducible; change the seed to explore different transition sequences |
+| Non-blocking queue sends | Device tasks never stall waiting for a queue slot; a dropped log message is preferable to blocking a state transition |
 
-## License
+For full rationale on each choice see the *Key Design Decisions* section of `DESIGN.docx`.
 
-MIT
+## Potential Improvements and Extensions
+
+- **Additional devices** — the queue-based architecture scales naturally; adding a Device C requires only a new task and queue pair with no changes to existing code
+- **Persistent logging** — redirect the logger task's output to a file or ring buffer for post-run analysis without modifying the device tasks
+- **Runtime fault injection** — add a signal handler or CLI command to force Device B into FAULT on demand, enabling targeted testing without waiting on the RNG
+- **Software watchdog** — add a watchdog task that detects if either device task stops producing state changes within a configurable timeout

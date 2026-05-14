@@ -322,9 +322,3 @@ python3 -m pytest -m unit -v          # unit tests only
 python3 -m pytest -m integration -v   # integration tests only
 python3 -m pytest -m kernel -v        # real kernel tests only
 ```
-
----
-
-## License
-
-GPL-2.0 (kernel module) / MIT (userspace components)
