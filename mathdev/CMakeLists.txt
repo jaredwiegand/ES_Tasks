@@ -38,13 +38,9 @@ if(BUILD_C_CLIENT)
         -Wno-unused-parameter
     )
 
-    if(cJSON_FOUND)
-        target_link_libraries(mathdev-client PRIVATE cjson)
-    else()
-        target_link_libraries(mathdev-client PRIVATE cjson)
-        target_include_directories(mathdev-client PRIVATE
-            ${cjson_SOURCE_DIR}
-        )
+    target_link_libraries(mathdev-client PRIVATE cjson)
+    if(NOT cJSON_FOUND)
+        target_include_directories(mathdev-client PRIVATE ${cjson_SOURCE_DIR})
     endif()
 
     target_compile_definitions(mathdev-client PRIVATE

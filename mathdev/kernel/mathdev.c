@@ -119,17 +119,17 @@ static int mathdev_calculate(struct math_request *req)
 {
     switch (req->op) {
     case MATH_OP_ADD:
-        pr_debug("mathdev: Calculating %lld + %lld!\n", req->a, req->b);
+        pr_info("mathdev: Calculating %lld + %lld!\n", req->a, req->b);
         req->result = req->a + req->b;
         break;
 
     case MATH_OP_SUB:
-        pr_debug("mathdev: Calculating %lld - %lld!\n", req->a, req->b);
+        pr_info("mathdev: Calculating %lld - %lld!\n", req->a, req->b);
         req->result = req->a - req->b;
         break;
 
     case MATH_OP_MUL:
-        pr_debug("mathdev: Calculating %lld * %lld!\n", req->a, req->b);
+        pr_info("mathdev: Calculating %lld * %lld!\n", req->a, req->b);
         req->result = req->a * req->b;
         break;
 
@@ -138,7 +138,7 @@ static int mathdev_calculate(struct math_request *req)
             pr_warn("mathdev: Division by zero requested!\n");
             return -EDOM;   /* POSIX errno: argument out of mathematical domain */
         }
-        pr_debug("mathdev: Calculating %lld / %lld!\n", req->a, req->b);
+        pr_info("mathdev: Calculating %lld / %lld!\n", req->a, req->b);
         req->result = req->a / req->b;
         break;
 

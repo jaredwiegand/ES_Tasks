@@ -145,7 +145,7 @@ static void     print_menu(void);
 static status_t do_handshake(int32_t fd, const char *client_id);
 static status_t do_calc_request(int32_t fd, int32_t *req_id_inout);
 static status_t send_bye(int32_t fd, const char *client_id);
-static status_t parse_args(int32_t argc, char * const argv[],
+static status_t parse_args(int argc, char * const argv[],
                             char *socket_path, uint32_t socket_path_sz,
                             char *client_id,   uint32_t client_id_sz);
 
@@ -671,8 +671,9 @@ static status_t build_and_send_hello(int32_t fd, const char *client_id)
  * @param a       First operand.
  * @param b       Second operand.
  *
- * @note Operands are passed as double to cJSON; precision is sufficient for
- *       the int64 values used in practice but would lose bits near INT64_MAX.
+ * @note Operands are serialised as raw decimal strings via cJSON_AddRawToObject
+ *       so that the full int64 range is preserved without loss.  cJSON's
+ *       internal double representation would lose precision above 2^53.
  *
  * @return STATUS_OK on success, STATUS_ERR on cJSON or send failure.
  */
@@ -681,7 +682,12 @@ static status_t build_and_send_calc(int32_t fd, int32_t req_id,
 {
     cJSON   *root   = NULL;
     char    *str    = NULL;
+    char     a_str[INT_STR_SIZE];
+    char     b_str[INT_STR_SIZE];
     status_t result = STATUS_ERR;
+
+    int64_to_str(a, a_str, sizeof(a_str));
+    int64_to_str(b, b_str, sizeof(b_str));
 
     root = cJSON_CreateObject();
     if (root != NULL)
@@ -689,8 +695,8 @@ static status_t build_and_send_calc(int32_t fd, int32_t req_id,
         (void)cJSON_AddStringToObject(root, "type",   "CALC");
         (void)cJSON_AddNumberToObject(root, "req_id", (double)req_id);
         (void)cJSON_AddStringToObject(root, "op",     op);
-        (void)cJSON_AddNumberToObject(root, "a",      (double)a);
-        (void)cJSON_AddNumberToObject(root, "b",      (double)b);
+        (void)cJSON_AddRawToObject(root,   "a",       a_str);
+        (void)cJSON_AddRawToObject(root,   "b",       b_str);
         str = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
         root = NULL;
@@ -1219,7 +1225,7 @@ static status_t send_bye(int32_t fd, const char *client_id)
  *
  * @return STATUS_OK on success, STATUS_ERR if an unknown argument is found.
  */
-static status_t parse_args(int32_t argc, char * const argv[],
+static status_t parse_args(int argc, char * const argv[],
                             char *socket_path, uint32_t socket_path_sz,
                             char *client_id,   uint32_t client_id_sz)
 {
@@ -1238,16 +1244,16 @@ static status_t parse_args(int32_t argc, char * const argv[],
                   (size_t)(socket_path_sz - 1U));
     socket_path[socket_path_sz - 1U] = '\0';
 
-    while ((i < argc) && (result == STATUS_OK))
+    while ((i < (int32_t)argc) && (result == STATUS_OK))
     {
-        if ((strcmp(argv[i], "--socket") == 0) && ((i + 1) < argc))
+        if ((strcmp(argv[i], "--socket") == 0) && ((i + 1) < (int32_t)argc))
         {
             i++;
             (void)strncpy(socket_path, argv[i],
                           (size_t)(socket_path_sz - 1U));
             socket_path[socket_path_sz - 1U] = '\0';
         }
-        else if ((strcmp(argv[i], "--client-id") == 0) && ((i + 1) < argc))
+        else if ((strcmp(argv[i], "--client-id") == 0) && ((i + 1) < (int32_t)argc))
         {
             i++;
             (void)strncpy(client_id, argv[i],
@@ -1287,7 +1293,7 @@ static status_t parse_args(int32_t argc, char * const argv[],
  *
  * @return 0 on clean exit, 1 on any error.
  */
-int32_t main(int32_t argc, char * const argv[])
+int main(int argc, char * const argv[])
 {
     char           socket_path[SOCKET_PATH_SIZE];
     char           client_id[CLIENT_ID_SIZE];
