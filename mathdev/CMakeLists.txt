@@ -24,7 +24,11 @@ if(NOT cJSON_FOUND)
     )
     set(ENABLE_CJSON_TEST      OFF CACHE BOOL "" FORCE)
     set(BUILD_SHARED_AND_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    # cJSON's CMakeLists.txt uses cmake_minimum_required < 3.5; suppress the
+    # resulting CMake deprecation warning since it comes from the dependency.
+    set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(cjson)
+    set(CMAKE_WARN_DEPRECATED ON CACHE BOOL "" FORCE)
 endif()
 
 # ── C client ─────────────────────────────────────────────────────────────────
@@ -87,10 +91,10 @@ if(EXISTS "${KERNEL_DIR}")
         VERBATIM
     )
 else()
-    message(WARNING
-        "Kernel build directory not found at ${KERNEL_DIR}. "
-        "Kernel module will NOT be built. "
-        "Set -DKERNEL_DIR=<path> to override."
+    message(STATUS
+        "Kernel build directory not found at ${KERNEL_DIR} -- "
+        "kernel module will not be built. "
+        "Install linux-headers-$(uname -r) or set -DKERNEL_DIR=<path>."
     )
 endif()
 
