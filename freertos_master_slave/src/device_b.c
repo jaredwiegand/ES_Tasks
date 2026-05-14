@@ -92,7 +92,7 @@ void device_b_task(void *params)
             xQueueSend(g_state_queue, &b_state, 0);
             vTaskDelay(pdMS_TO_TICKS(DEVICE_B_TICK_MS));
 
-            if (g_sim_running == pdFALSE) { goto task_exit; }
+            if (g_sim_running == pdFALSE) { break; }
             continue;
         }
 
@@ -114,10 +114,9 @@ void device_b_task(void *params)
 
         vTaskDelay(pdMS_TO_TICKS(DEVICE_B_TICK_MS));
 
-        if (g_sim_running == pdFALSE) { goto task_exit; }
+        if (g_sim_running == pdFALSE) { break; }
     }
 
-task_exit:
     logger_log(LOG_SRC_DEVICE_B, "task exiting");
     vTaskDelete(NULL);
 }

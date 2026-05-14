@@ -23,8 +23,10 @@ else()
     message(FATAL_ERROR "Unsupported platform — add a FREERTOS_PORT entry for this OS")
 endif()
 
-# FreeRTOSConfig.h is in the project root; tell the kernel where to find it.
-set(FREERTOS_CONFIG_FILE_DIRECTORY "${CMAKE_SOURCE_DIR}" CACHE STRING "" FORCE)
+# FreeRTOSConfig.h is in the project root; expose it via the interface library
+# the FreeRTOS-Kernel CMake expects (replaces deprecated FREERTOS_CONFIG_FILE_DIRECTORY).
+add_library(freertos_config INTERFACE)
+target_include_directories(freertos_config SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}")
 
 # ── Fetch FreeRTOS-Kernel ──────────────────────────────────────────────────
 include(FetchContent)
